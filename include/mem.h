@@ -14,6 +14,11 @@
 
 #include <new> // std::nothrow
 #include <cstddef> // size_t definition
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 namespace util
 {
@@ -143,6 +148,99 @@ namespace util
         }
 
         return m;
+    }
+
+    template <class T = double>
+    inline T** loadMatrixFromFile(const char* filePath, size_t& outNumRows, size_t& outNumCols)
+    {
+        outNumRows = 0;
+        outNumCols = 0;
+
+        std::ifstream is(filePath);
+        if (!is.good())
+        {
+            std::cerr << "Error loading matrix from file: Unable to open file." << std::endl;
+            return nullptr;
+        }
+
+        std::string line;
+        if (!std::getline(is, line))
+        {
+            std::cerr << "Error loading matrix from file: File is empty or invalid." << std::endl;
+            is.close();
+            return nullptr;
+        }
+
+        size_t rows = 0;
+        size_t cols = 0;
+
+        std::stringstream ss(line);
+        if (!(ss >> rows >> cols) || rows == 0 || cols == 0)
+        {
+            std::cerr << "Error loading matrix from file: Row or column size is zero." << std::endl;
+            is.close();
+            return nullptr;
+        }
+
+
+        T** retMatrix = allocMatrix<T>(rows, cols);
+        if (retMatrix == nullptr)
+        {
+            std::cerr << "Error loading matrix from file: Matrix memory allocation failed." << std::endl;
+            is.close();
+            return nullptr;
+        }
+
+        for (size_t r = 0; r < rows; r++)
+        {
+            if (!std::getline(is, line))
+            {
+                std::cerr << "Error loading matrix from file: EOF reached before reading all rows." << std::endl;
+                releaseMatrix<T>(retMatrix, rows);
+                is.close();
+                return nullptr;
+            }
+
+            std::stringstream ss(line);
+
+            for (size_t c = 0; c < cols; c++)
+            {
+                T entry = 0;
+                if (!(ss >> entry))
+                {
+                    std::cerr << "Error loading matrix from file: EOL reached before reading all cols." << std::endl;
+                    releaseMatrix<T>(retMatrix, rows);
+                    is.close();
+                    return nullptr;
+                }
+
+                retMatrix[r][c] = entry;
+            }
+        }
+
+        is.close();
+        outNumRows = rows;
+        outNumCols = cols;
+        return retMatrix;
+    }
+
+    template <class T = double>
+    inline void outputMatrix(std::ostream& os, T** matrix, size_t rows, size_t cols, int colWidth = 3)
+    {
+        if (matrix == nullptr)
+            return;
+
+        for (size_t r = 0; r < rows; r++)
+        {
+            for (size_t c = 0; c < cols; c++)
+            {
+                os << std::setw(3) << matrix[r][c];
+                if (c < cols - 1)
+                    os << " ";
+                else
+                    os << std::endl;
+            }
+        }
     }
 
     /**
