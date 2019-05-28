@@ -3,6 +3,7 @@
 
 #include <string>
 #include "inireader.h"
+#include "datatable.h"
 #include "flowshopbasic.h"
 
 namespace cs471
@@ -28,7 +29,7 @@ namespace cs471
     private:
         util::IniReader iniParams;
 
-        int runNEHThreaded(const TestParams& p, const std::string inputFile, int testIndex);
+        int runNEHThreaded(TestParams* const p, const std::string inputFile, int testIndex, mdata::DataTable<std::string>* resultsTable);
         fshop::FlowshopBasic* allocFlowShop(const char* inputFile, int alg);
         TestParams readTestParams();
     };

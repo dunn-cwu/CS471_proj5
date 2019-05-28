@@ -19,6 +19,7 @@ namespace fshop
         const int totalFlowTime;
 
         const int* const getJobSeq();
+        std::string getJobSeqAsString();
         const int** const getStartTimeMatrix();
         const int** const getDepartTimeMatrix();
 

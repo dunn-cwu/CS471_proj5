@@ -39,7 +39,21 @@ FlowshopSolution::~FlowshopSolution()
 
 const int* const FlowshopSolution::getJobSeq()
 {
-    return const_cast<const int* const>(jobSequence);;
+    return const_cast<const int* const>(jobSequence);
+}
+
+std::string FlowshopSolution::getJobSeqAsString()
+{
+    std::string retStr = "[";
+
+    for (size_t i = 0; i < seqSize; i++)
+    {
+        retStr += std::to_string(jobSequence[i]);
+        if (i < seqSize - 1) retStr += "-";
+    }
+
+    retStr += "]";
+    return retStr;
 }
 
 const int** const FlowshopSolution::getStartTimeMatrix()

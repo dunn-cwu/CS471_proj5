@@ -2,6 +2,7 @@
 #include <vector>
 #include <thread>
 #include <future>
+#include <chrono>
 #include "experiment.h"
 #include "threadpool.h"
 #include "stringutils.h"
@@ -22,6 +23,7 @@ using namespace cs471;
 using namespace fshop;
 using namespace util;
 using namespace std;
+using namespace chrono;
 
 Experiment::Experiment(string paramsFile)
 {
@@ -42,6 +44,7 @@ Experiment::~Experiment()
 int Experiment::run()
 {
     TestParams p = readTestParams();
+    mdata::DataTable<string> resultsTable(p.maxTestFile - p.minTestFile + 1, 5);
     ThreadPool tpool(p.numThreads);
     vector<std::future<int>> futures;
 
@@ -54,11 +57,17 @@ int Experiment::run()
     else
         cout << "Running NEH on Flow Shop Scheduling ..." << endl;
 
+    resultsTable.setColLabel(0, "Data Set");
+    resultsTable.setColLabel(1, "cMax");
+    resultsTable.setColLabel(2, "TFT");
+    resultsTable.setColLabel(3, "Execution Time (ms)");
+    resultsTable.setColLabel(4, "Sequence");
+
     for (int i = p.minTestFile; i <= p.maxTestFile; i++)
     {
         string inputFile = std::to_string(i) + ".txt";
         futures.emplace_back(
-            tpool.enqueue(&cs471::Experiment::runNEHThreaded, this, p, inputFile, i)
+            tpool.enqueue(&cs471::Experiment::runNEHThreaded, this, &p, inputFile, i, &resultsTable)
         );
     }
 
@@ -74,17 +83,25 @@ int Experiment::run()
         }
     }
 
+    if (!p.resultsFile.empty())
+    {
+        resultsTable.exportCSV(p.resultsFile.c_str());
+        cout << "Results exported to: " << p.resultsFile << endl;
+    }
+
     return 0;
 }
 
-int Experiment::runNEHThreaded(const TestParams& p, const std::string inputFile, int testIndex)
+int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile, int testIndex, mdata::DataTable<std::string>* resultsTable)
 {
-    string fullInputPath = p.inputFilesDir + inputFile;
-    auto objectiveFs = allocFlowShop(fullInputPath.c_str(), p.algorithm);
+    string fullInputPath = p->inputFilesDir + inputFile;
+    auto objectiveFs = allocFlowShop(fullInputPath.c_str(), p->algorithm);
     if (objectiveFs == nullptr)
         return 1;
 
     fsSol result = nullptr;
+
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
     try
     {
@@ -98,7 +115,17 @@ int Experiment::runNEHThreaded(const TestParams& p, const std::string inputFile,
         return 2;
     }
     
-    result->outputTimesCsv(util::s_replace(p.timesFile, "%TEST%", std::to_string(testIndex)));
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    resultsTable->setEntry(testIndex, 0, std::to_string(testIndex));
+    resultsTable->setEntry(testIndex, 1, std::to_string(result->cmax));
+    resultsTable->setEntry(testIndex, 2, std::to_string(result->totalFlowTime));
+    resultsTable->setEntry(testIndex, 3, std::to_string(execTimeMs));
+    resultsTable->setEntry(testIndex, 4, result->getJobSeqAsString());
+
+    if (!p->timesFile.empty())
+        result->outputTimesCsv(util::s_replace(p->timesFile, "%TEST%", std::to_string(testIndex)));
 
     delete objectiveFs;
 
