@@ -3,6 +3,10 @@
 using jtList = std::list<fshop::JobTimePair>;
 using jList = std::list<int>;
 
+fshop::NEH::NEH()
+    : rd(), randEngine(rd()), randChance(0, 1)
+{ }
+
 fsSol fshop::NEH::run(FlowshopBasic* const objectiveFs)
 {
     jtList availJobsList;
@@ -80,7 +84,8 @@ fsSol fshop::NEH::bestPermutation(FlowshopBasic* const objectiveFs, const jList&
         }
 
         auto result = objectiveFs->calcObjective(seqArr, bufferList.size());
-        if (bestSol == nullptr || result->cmax < bestSol->cmax)
+        if (bestSol == nullptr || result->cmax < bestSol->cmax ||
+            (result->cmax == bestSol->cmax && randChance(randEngine) >= 0.5))
         {
             bestSol.reset();
             bestSol = std::move(result);

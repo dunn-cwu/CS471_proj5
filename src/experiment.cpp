@@ -106,7 +106,8 @@ int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile,
 
     try
     {
-        result = NEH::run(objectiveFs);
+        NEH neh;
+        result = neh.run(objectiveFs);
     }
     catch(const std::exception& e)
     {

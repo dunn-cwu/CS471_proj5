@@ -3,6 +3,7 @@
 
 #include <list>
 #include <iostream>
+#include <random>
 #include "flowshopbasic.h"
 
 using fsSol = std::unique_ptr<fshop::FlowshopSolution>;
@@ -23,10 +24,15 @@ namespace fshop
     class NEH
     {
     public:
-        static fsSol run(FlowshopBasic* const objectiveFs);
+        NEH();
+        fsSol run(FlowshopBasic* const objectiveFs);
     private:
-        static void makeInitialAvailJobList(FlowshopBasic* const objectiveFs, std::list<fshop::JobTimePair>& outList);
-        static fsSol bestPermutation(FlowshopBasic* const objectiveFs, const std::list<int>& baseList, int jobInsert, std::list<int>& outBestSeq);
+        std::random_device rd;
+        std::mt19937 randEngine;
+        std::uniform_real_distribution<float> randChance;
+
+        void makeInitialAvailJobList(FlowshopBasic* const objectiveFs, std::list<fshop::JobTimePair>& outList);
+        fsSol bestPermutation(FlowshopBasic* const objectiveFs, const std::list<int>& baseList, int jobInsert, std::list<int>& outBestSeq);
     };
 }
 
