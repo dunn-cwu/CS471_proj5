@@ -171,6 +171,11 @@ size_t FlowshopBasic::getTotalMachines()
     return ptMatrixRows;
 }
 
+size_t FlowshopBasic::getFuncCallCounts()
+{
+    return funcCallCounter;
+}
+
 std::unique_ptr<FlowshopSolution> FlowshopBasic::calcObjective(int* seq, size_t seqSize)
 {
     validateParams(seq, seqSize);

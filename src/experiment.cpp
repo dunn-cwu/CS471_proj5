@@ -44,7 +44,7 @@ Experiment::~Experiment()
 int Experiment::run()
 {
     TestParams p = readTestParams();
-    mdata::DataTable<string> resultsTable(p.maxTestFile - p.minTestFile + 1, 5);
+    mdata::DataTable<string> resultsTable(p.maxTestFile - p.minTestFile + 1, 6);
     ThreadPool tpool(p.numThreads);
     vector<std::future<int>> futures;
 
@@ -60,8 +60,9 @@ int Experiment::run()
     resultsTable.setColLabel(0, "Data Set");
     resultsTable.setColLabel(1, "cMax");
     resultsTable.setColLabel(2, "TFT");
-    resultsTable.setColLabel(3, "Execution Time (ms)");
-    resultsTable.setColLabel(4, "Sequence");
+    resultsTable.setColLabel(3, "Func Calls");
+    resultsTable.setColLabel(4, "Execution Time (ms)");
+    resultsTable.setColLabel(5, "Sequence");
 
     for (int i = p.minTestFile; i <= p.maxTestFile; i++)
     {
@@ -121,8 +122,9 @@ int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile,
     resultsTable->setEntry(testIndex, 0, std::to_string(testIndex));
     resultsTable->setEntry(testIndex, 1, std::to_string(result->cmax));
     resultsTable->setEntry(testIndex, 2, std::to_string(result->totalFlowTime));
-    resultsTable->setEntry(testIndex, 3, std::to_string(execTimeMs));
-    resultsTable->setEntry(testIndex, 4, result->getJobSeqAsString());
+    resultsTable->setEntry(testIndex, 3, std::to_string(objectiveFs->getFuncCallCounts()));
+    resultsTable->setEntry(testIndex, 4, std::to_string(execTimeMs));
+    resultsTable->setEntry(testIndex, 5, result->getJobSeqAsString());
 
     if (!p->timesFile.empty())
         result->outputTimesCsv(util::s_replace(p->timesFile, "%TEST%", std::to_string(testIndex)));

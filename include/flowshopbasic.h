@@ -52,6 +52,7 @@ namespace fshop
         virtual int getProcessingTime(size_t machine, size_t job);
         virtual size_t getTotalJobs();
         virtual size_t getTotalMachines();
+        virtual size_t getFuncCallCounts();
 
         // Delete copy/move constructors and assignments
         FlowshopBasic(const FlowshopBasic& o) = delete;
