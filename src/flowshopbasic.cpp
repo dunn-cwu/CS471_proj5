@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <fstream>
 #include "flowshopbasic.h"
 #include "mem.h"
 
@@ -49,6 +50,42 @@ const int** const FlowshopSolution::getStartTimeMatrix()
 const int** const FlowshopSolution::getDepartTimeMatrix()
 {
     return const_cast<const int** const>(departTimeMatrix);
+}
+
+bool FlowshopSolution::outputTimesCsv(const std::string& fileNamePrefix)
+{
+    using namespace std;
+
+    string startTimesFile = fileNamePrefix + "starttimes.csv";
+    string departTimesFile = fileNamePrefix + "departtimes.csv";
+
+    ofstream startOs = ofstream(startTimesFile, ios::trunc | ios::out);
+    if (!startOs.good()) return false;
+
+    ofstream departOs = ofstream(departTimesFile, ios::trunc | ios::out);
+    if (!departOs.good()) return false;
+
+    for (size_t m = 0; m < numMachines; m++)
+    {
+        for (size_t j = 0; j < seqSize; j++)
+        {
+            startOs << startTimeMatrix[m][j];
+            departOs << departTimeMatrix[m][j];
+
+            if (j < seqSize - 1)
+            {
+                startOs << ",";
+                departOs << ",";
+            }
+        }
+
+        startOs << endl;
+        departOs << endl;
+    }
+
+    startOs.close();
+    departOs.close();
+    return true;
 }
 
 FlowshopSolution::FlowshopSolution(const FlowshopSolution& obj)
