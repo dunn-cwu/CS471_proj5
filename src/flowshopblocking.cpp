@@ -41,5 +41,7 @@ void FlowshopBlocking::calcTimeMatrix(int** departTimeMatrix, int* seq, size_t r
         }
 
         departTimeMatrix[rows - 1][c] = departTimeMatrix[rows - 2][c] + procTimeMatrix[rows - 1][seq[c] - 1];
+
+        FlowshopBasic::calcStartTimeCol(startTimeMatrix, departTimeMatrix, seq, c, rows, cols);
     }
 }

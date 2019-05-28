@@ -12,13 +12,15 @@ inline int max(int val1, int val2)
 
 // ============================================================
 
-FlowshopSolution::FlowshopSolution(int** _timeMatrix, size_t _tMatrixRows, int* _jobSeq, size_t _seqSize, int _cmax, int _totalFlowTime)
-    : timeMatrix(_timeMatrix), numMachines(_tMatrixRows), seqSize(_seqSize), cmax(_cmax), totalFlowTime(_totalFlowTime)
+FlowshopSolution::FlowshopSolution(int** _startimeMatrix, int** _departTimeMatrix, size_t _tMatrixRows, int* _jobSeq, size_t _seqSize, int _cmax, int _totalFlowTime)
+    : startTimeMatrix(_startimeMatrix), departTimeMatrix(_departTimeMatrix), numMachines(_tMatrixRows), seqSize(_seqSize), cmax(_cmax), totalFlowTime(_totalFlowTime)
 {
     if (_jobSeq == nullptr)
         throw std::invalid_argument("Error: _jobSeq cannot be nullptr");
-    else if (_timeMatrix == nullptr)
-        throw std::invalid_argument("Error: _timeMatrix cannot be nullptr");
+    else if (_startimeMatrix == nullptr)
+        throw std::invalid_argument("Error: _startimeMatrix cannot be nullptr");
+    else if (_departTimeMatrix == nullptr)
+        throw std::invalid_argument("Error: _departTimeMatrix cannot be nullptr");
     else if (seqSize == 0)
         throw std::invalid_argument("Error: _seqSize cannot be zero");
 
@@ -30,7 +32,8 @@ FlowshopSolution::FlowshopSolution(int** _timeMatrix, size_t _tMatrixRows, int* 
 FlowshopSolution::~FlowshopSolution()
 {
     util::releaseArray<int>(jobSequence);
-    util::releaseMatrix<int>(timeMatrix, numMachines);
+    util::releaseMatrix<int>(startTimeMatrix, numMachines);
+    util::releaseMatrix<int>(departTimeMatrix, numMachines);
 }
 
 const int* const FlowshopSolution::getJobSeq()
@@ -38,13 +41,18 @@ const int* const FlowshopSolution::getJobSeq()
     return const_cast<const int* const>(jobSequence);;
 }
 
-const int** const FlowshopSolution::getTimeMatrix()
+const int** const FlowshopSolution::getStartTimeMatrix()
 {
-    return const_cast<const int** const>(timeMatrix);
+    return const_cast<const int** const>(startTimeMatrix);
+}
+
+const int** const FlowshopSolution::getDepartTimeMatrix()
+{
+    return const_cast<const int** const>(departTimeMatrix);
 }
 
 FlowshopSolution::FlowshopSolution(const FlowshopSolution& obj)
-    : timeMatrix(obj.timeMatrix), numMachines(obj.numMachines), seqSize(obj.seqSize), cmax(obj.cmax), totalFlowTime(obj.totalFlowTime)
+    : startTimeMatrix(obj.startTimeMatrix), departTimeMatrix(obj.departTimeMatrix), numMachines(obj.numMachines), seqSize(obj.seqSize), cmax(obj.cmax), totalFlowTime(obj.totalFlowTime)
 {
     if (obj.jobSequence == nullptr)
         throw std::invalid_argument("Error: jobSequence cannot be nullptr");
@@ -60,15 +68,17 @@ FlowshopSolution::FlowshopSolution(FlowshopSolution&& obj)
     : numMachines(obj.numMachines), seqSize(obj.seqSize), cmax(obj.cmax), totalFlowTime(obj.totalFlowTime)
 {
     jobSequence = obj.jobSequence;
-    timeMatrix = obj.timeMatrix;
+    startTimeMatrix = obj.startTimeMatrix;
+    departTimeMatrix = obj.departTimeMatrix;
     obj.jobSequence = nullptr;
-    obj.timeMatrix = nullptr;
+    obj.startTimeMatrix = nullptr;
+    obj.departTimeMatrix = nullptr;
 }
 
 // ============================================================
 
 FlowshopBasic::FlowshopBasic(const char* procTimeMatrixFile)
-    : ptMatrixRows(0), ptMatrixCols(0), funcCallCounter(0)
+    : startTimeMatrix(nullptr), ptMatrixRows(0), ptMatrixCols(0), funcCallCounter(0)
 {
     procTimeMatrix = util::loadMatrixFromFile<int>(procTimeMatrixFile, ptMatrixRows, ptMatrixCols);
     if (procTimeMatrix == nullptr)
@@ -84,17 +94,52 @@ FlowshopBasic::~FlowshopBasic()
     util::releaseMatrix<int>(procTimeMatrix, ptMatrixRows);
 }
 
-size_t FlowshopBasic::getTotalJobs()
+int FlowshopBasic::getProcessingTime(size_t machine, size_t job)
 {
-    return ptMatrixRows;
+    if (machine == 0 || job == 0)
+    {
+        std::string msg = "Error: Machine or job number cannot be zero";
+        throw std::out_of_range(msg);
+    }
+    else if (machine > ptMatrixRows || job > ptMatrixCols)
+    {
+        std::string msg = "Error: Machine or job number out of range";
+        throw std::out_of_range(msg);
+    }
+
+    return procTimeMatrix[machine - 1][job - 1];
 }
 
-size_t FlowshopBasic::getTotalMachines()
+size_t FlowshopBasic::getTotalJobs()
 {
     return ptMatrixCols;
 }
 
+size_t FlowshopBasic::getTotalMachines()
+{
+    return ptMatrixRows;
+}
+
 std::unique_ptr<FlowshopSolution> FlowshopBasic::calcObjective(int* seq, size_t seqSize)
+{
+    validateParams(seq, seqSize);
+
+    auto compTimeMatrix = allocTimeMatrix(ptMatrixRows, seqSize);
+    startTimeMatrix = allocTimeMatrix(ptMatrixRows, seqSize);
+
+    initTimeMatrix(compTimeMatrix, seq, ptMatrixRows, seqSize);
+    calcStartTimeCol(startTimeMatrix, compTimeMatrix, seq, 0, ptMatrixRows, seqSize);
+
+    calcTimeMatrix(compTimeMatrix, seq, ptMatrixRows, seqSize);
+
+    auto retVal = std::unique_ptr<FlowshopSolution>(new FlowshopSolution(startTimeMatrix, compTimeMatrix, ptMatrixRows, seq, seqSize, 
+        getCmax(compTimeMatrix, ptMatrixRows, seqSize), getTFT(compTimeMatrix, ptMatrixRows, seqSize)));
+
+    funcCallCounter += 1;
+    return std::move(retVal);
+}
+
+void FlowshopBasic::validateParams(int* seq, size_t seqSize)
 {
     if (seqSize == 0 || seqSize > ptMatrixCols)
     {
@@ -112,28 +157,20 @@ std::unique_ptr<FlowshopSolution> FlowshopBasic::calcObjective(int* seq, size_t 
             throw std::out_of_range(msg);
         }
     }
+}
 
-    int** compTimeMatrix = util::allocMatrix<int>(ptMatrixRows, seqSize);
-    if (compTimeMatrix == nullptr)
+int** FlowshopBasic::allocTimeMatrix(size_t rows, size_t cols)
+{
+    int** timeMatrix = util::allocMatrix<int>(rows, cols);
+    if (timeMatrix == nullptr)
     {
-        std::cerr << "Error allocating completion time matrix." << std::endl;
+        std::cerr << "Error allocating time matrix." << std::endl;
         throw std::bad_alloc();
     }
 
-    util::initMatrix<int>(compTimeMatrix, ptMatrixRows, seqSize, 0);
+    util::initMatrix<int>(timeMatrix, rows, cols, 0);
 
-    initTimeMatrix(compTimeMatrix, seq, ptMatrixRows, seqSize);
-    util::outputMatrix(std::cout, compTimeMatrix, ptMatrixRows, seqSize);
-    std::cout << std::endl;
-
-    calcTimeMatrix(compTimeMatrix, seq, ptMatrixRows, seqSize);
-    util::outputMatrix(std::cout, compTimeMatrix, ptMatrixRows, seqSize);
-    std::cout << std::endl;
-
-    auto retVal = std::unique_ptr<FlowshopSolution>(new FlowshopSolution(compTimeMatrix, ptMatrixRows, seq, seqSize, 
-        getCmax(compTimeMatrix, ptMatrixRows, seqSize), getTFT(compTimeMatrix, ptMatrixRows, seqSize)));
-
-    return std::move(retVal);
+    return timeMatrix;
 }
 
 void FlowshopBasic::initTimeMatrix(int** compTimeMatrix, int* seq, size_t rows, size_t cols)
@@ -162,6 +199,16 @@ void FlowshopBasic::calcTimeMatrix(int** compTimeMatrix, int* seq, size_t rows, 
 
             compTimeMatrix[r][c] = max(c1, c2) + procTimeMatrix[r][seq[c] - 1];
         }
+
+        FlowshopBasic::calcStartTimeCol(startTimeMatrix, compTimeMatrix, seq, c, rows, cols);
+    }
+}
+
+void FlowshopBasic::calcStartTimeCol(int** startTimeMatrix, int** departTimeMatrix, int* seq, size_t curCol, size_t rows, size_t cols)
+{
+    for (size_t r = rows; r > 0; r--)
+    {
+        startTimeMatrix[r - 1][curCol] = departTimeMatrix[r - 1][curCol] - procTimeMatrix[r - 1][seq[curCol] - 1];
     }
 }
 
