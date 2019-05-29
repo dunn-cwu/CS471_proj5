@@ -14,5 +14,5 @@ echo "----------------------"
 
 echo "----------------------"
 
-echo "All tests finished."
+echo "All scripts ran."
 
