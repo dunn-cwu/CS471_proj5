@@ -18,7 +18,7 @@
 
 using namespace std;
 
-int runDebugJobSeq(const char* seq);
+int runDebugJobSeq(const char* paramsFile, const char* seq);
 
 int main(int argc, char** argv)
 {
@@ -31,29 +31,31 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if (argc > 2)
+    try
     {
-        return runDebugJobSeq(argv[2]);
-    }
-    else
-    {
-        try
+        if (argc > 2)
+        {
+            return runDebugJobSeq(argv[1], argv[2]);
+        }
+        else
         {
             // Run experiment and return error code
             cs471::Experiment ex(argv[1]);
-            return ex.run();
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << "An exception occured:" << endl;
-            std::cerr << e.what() << endl;
+            return ex.runNEH();
+            
         }
     }
-    
+    catch(const std::exception& e)
+    {
+        std::cerr << "An exception occurred:" << endl;
+        std::cerr << e.what() << endl;
+        return 3;
+    }
+
     return 0;
 }
 
-int runDebugJobSeq(const char* seq)
+int runDebugJobSeq(const char* paramsFile, const char* seq)
 {
     string strSeq = seq;
     vector<int> jobSeq;
@@ -78,6 +80,13 @@ int runDebugJobSeq(const char* seq)
         cerr << "Error: debug job sequence has duplicate jobs in permutation." << endl;
         return 2;
     }
+
+    cout << "Running debug sequence: " << seq << endl;
+    cout << "=======================================" << endl;
+
+    // Run experiment and return error code
+    cs471::Experiment ex(paramsFile);
+    return ex.runDebugSeq(&jobSeq[0], jobSeq.size());
 
     return 0;
 }

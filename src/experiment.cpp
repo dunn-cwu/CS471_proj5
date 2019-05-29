@@ -61,7 +61,7 @@ Experiment::Experiment(string paramsFile)
  * 
  * @return int Returns a non-zero error code on failure. Otherwise returns zero.
  */
-int Experiment::run()
+int Experiment::runNEH()
 {
     // Retrieve test parameters from ini file
     TestParams p = readTestParams();
@@ -249,6 +249,61 @@ TestParams Experiment::readTestParams()
     }
 
     return p;
+}
+
+/**
+ * @brief Used for debugging the objective flowshop functions.
+ * This method runs the objective function specified in the
+ * parameters file with the specified input processing time files
+ * and then prints the results of the flowshop objective function
+ * with the given job sequence.
+ * 
+ * @param seq Job sequence to run flowshop objective functions with
+ * @param seqSize Size of the job sequence array
+ * @return Returns a non-zero error code on failure, otherwise zero.
+ */
+int Experiment::runDebugSeq(int* seq, size_t seqSize)
+{
+    // Retrieve test parameters from ini file
+    TestParams p = readTestParams();
+
+    if (p.algorithm == 1)
+        cout << "Running Flow Shop with Blocking ..." << endl;
+    else if (p.algorithm == 2)
+        cout << "Running Flow Shop with No Wait ..." << endl;
+    else
+        cout << "Running Flow Shop Scheduling ..." << endl;
+
+    cout << endl;
+
+    // Prepare pointer to results
+    fsSol result = nullptr;
+
+    for (int i = p.minTestFile; i <= p.maxTestFile; i++)
+    {
+        string fullInputPath = p.inputFilesDir + std::to_string(i) + ".txt";
+
+        cout << "Input file: " << fullInputPath << endl;
+
+        // Get the flowshop objective function that we want to optimize
+        auto objectiveFs = allocFlowShop(fullInputPath.c_str(), p.algorithm);
+        if (objectiveFs == nullptr)
+        {
+            cout << "Objective flowshop function encountered an error." << endl;
+            return 1;
+        }
+
+        result = objectiveFs->calcObjective(seq, seqSize);
+        result->outputAll(std::cout);
+
+        delete objectiveFs;
+
+        cout << "=======================================" << endl;
+    }
+
+    cout << "Debug objective function sequence tests completed." << endl;
+
+    return 0;
 }
 
 // =========================

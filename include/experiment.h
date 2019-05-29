@@ -45,7 +45,8 @@ namespace cs471
         Experiment(std::string paramsFile);
         ~Experiment() = default;
 
-        int run();
+        int runNEH();
+        int runDebugSeq(int* seq, size_t seqSize);
     private:
         util::IniReader iniParams;
 

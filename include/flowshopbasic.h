@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <stdexcept>
 #include <memory>
+#include <ostream>
 #include <string>
 
 namespace fshop
@@ -44,6 +45,8 @@ namespace fshop
         const int** const getDepartTimeMatrix();
 
         bool outputTimesCsv(const std::string& fileNamePrefix);
+
+        void outputAll(std::ostream& os);
 
         // Copy constructor
         FlowshopSolution(const FlowshopSolution& obj);

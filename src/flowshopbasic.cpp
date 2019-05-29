@@ -166,6 +166,36 @@ bool FlowshopSolution::outputTimesCsv(const std::string& fileNamePrefix)
 }
 
 /**
+ * @brief Outputs all results data to the given stream in a human readable format
+ * 
+ * @param os The output stream to write to
+ */
+void FlowshopSolution::outputAll(std::ostream& os)
+{
+    std::cout << "Input seq: ";
+
+    for (size_t i = 0; i < seqSize; i++)
+    {
+        std::cout << jobSequence[i];
+        if (i < seqSize - 1)
+            std::cout << ", ";
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "Cmax: " << cmax << std::endl;
+    std::cout << "TFT: " << totalFlowTime << std::endl << std::endl;
+
+    std::cout << "Starting times matrix:" << std::endl;
+    util::outputMatrix(std::cout, startTimeMatrix, numMachines, seqSize, 4);
+    std::cout << std::endl;
+
+    std::cout << "Departure times matrix:" << std::endl;
+    util::outputMatrix(std::cout, departTimeMatrix, numMachines, seqSize, 4);
+    std::cout << std::endl;
+}
+
+/**
  * @brief Copy constructor for the FlowshopSolution class
  */
 FlowshopSolution::FlowshopSolution(const FlowshopSolution& obj)
