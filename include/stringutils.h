@@ -1,6 +1,6 @@
 /**
  * @file stringutils.h
- * @author Evan Teran (https://github.com/eteran)
+ * @author Evan Teran (https://github.com/eteran) and Andrew Dunn
  * @brief Contains various string manipulation helper functions
  * @date 2019-04-01
  * 

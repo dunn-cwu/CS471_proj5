@@ -1,3 +1,14 @@
+/**
+ * @file experiment.cpp
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Implementation file for the Experiment class.
+ * @version 0.1
+ * @date 2019-05-26
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
+
 #include <stdexcept>
 #include <vector>
 #include <thread>
@@ -25,8 +36,14 @@ using namespace util;
 using namespace std;
 using namespace chrono;
 
+/**
+ * @brief Construct a Experiment object
+ * 
+ * @param paramsFile File path to the input ini paramater file
+ */
 Experiment::Experiment(string paramsFile)
 {
+    // Attempt to open parameters file
     if (!iniParams.openFile(paramsFile))
     {
         string msg = "Error opening ini file: ";
@@ -37,15 +54,26 @@ Experiment::Experiment(string paramsFile)
     cout << "Loaded parameters file: " << paramsFile << endl;
 }
 
-Experiment::~Experiment()
-{
-}
-
+/**
+ * @brief Runs the cs471 lab 5 experiment, which involves executing
+ * the NEH algorithm for a specific flowshop objective function that
+ * is specified in the input parameters file.
+ * 
+ * @return int Returns a non-zero error code on failure. Otherwise returns zero.
+ */
 int Experiment::run()
 {
+    // Retrieve test parameters from ini file
     TestParams p = readTestParams();
+
+    // Construct data table to store experiment results
     mdata::DataTable<string> resultsTable(p.maxTestFile - p.minTestFile + 1, 6);
+
+    // Initialize thread pool with a parameter-given number of threads
     ThreadPool tpool(p.numThreads);
+
+    // Initialize thread future vector, used for thread pool synchronization
+    // and keeps track of the individual tasks being executed.
     vector<std::future<int>> futures;
 
     cout << "Started " << p.numThreads << " worker threads ..." << endl;
@@ -57,6 +85,7 @@ int Experiment::run()
     else
         cout << "Running NEH on Flow Shop Scheduling ..." << endl;
 
+    // Prepare results table column header labels
     resultsTable.setColLabel(0, "Data Set");
     resultsTable.setColLabel(1, "cMax");
     resultsTable.setColLabel(2, "TFT");
@@ -64,6 +93,7 @@ int Experiment::run()
     resultsTable.setColLabel(4, "Execution Time (ms)");
     resultsTable.setColLabel(5, "Sequence");
 
+    // Add all input test files as tasks in thread pool
     for (int i = p.minTestFile; i <= p.maxTestFile; i++)
     {
         string inputFile = std::to_string(i) + ".txt";
@@ -72,18 +102,22 @@ int Experiment::run()
         );
     }
 
-    const size_t totalFutures = futures.size();
+    // const size_t totalFutures = futures.size();
 
+    // Join all thread pool tasks using futures vector
+    // and get the return value for each
     for (int i = 0; i < futures.size(); i++)
     {
         int err = futures[i].get();
         if (err)
         {
+            // Threaded task returned with an error code, bail
             tpool.stopAndJoinAll();
             return err;
         }
     }
 
+    // Output results table to a csv file
     if (!p.resultsFile.empty())
     {
         resultsTable.exportCSV(p.resultsFile.c_str());
@@ -93,19 +127,34 @@ int Experiment::run()
     return 0;
 }
 
+/**
+ * @brief Runs a single instance of the NEH algorithm.
+ * This function should only be executed from within an async thread.
+ * 
+ * @param p Pointer to the experiment test parameters
+ * @param inputFile Input file containing the job processing time matrix
+ * @param testIndex Index of the input test file, used to store results in results table on correct row
+ * @param resultsTable Pointer to the results table which this function will place it's NEH results into
+ * @return int 
+ */
 int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile, int testIndex, mdata::DataTable<std::string>* resultsTable)
 {
     string fullInputPath = p->inputFilesDir + inputFile;
+
+    // Get the flowshop objective function that we want to optimize
     auto objectiveFs = allocFlowShop(fullInputPath.c_str(), p->algorithm);
     if (objectiveFs == nullptr)
         return 1;
 
+    // Prepare pointer to results
     fsSol result = nullptr;
 
+    // Start recording execution time
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
     try
     {
+        // Run the NEH algorithm on the objective flowshop function
         NEH neh;
         result = neh.run(objectiveFs);
     }
@@ -117,9 +166,11 @@ int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile,
         return 2;
     }
     
+    // Record execution time
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
 
+    // Insert NEH results into results table at the correct row
     resultsTable->setEntry(testIndex, 0, std::to_string(testIndex));
     resultsTable->setEntry(testIndex, 1, std::to_string(result->cmax));
     resultsTable->setEntry(testIndex, 2, std::to_string(result->totalFlowTime));
@@ -127,14 +178,24 @@ int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile,
     resultsTable->setEntry(testIndex, 4, std::to_string(execTimeMs));
     resultsTable->setEntry(testIndex, 5, result->getJobSeqAsString());
 
+    // Dump NEH results start and departure time matrices to a csv file
     if (!p->timesFile.empty())
         result->outputTimesCsv(util::s_replace(p->timesFile, "%TEST%", std::to_string(testIndex)));
 
+    // Clean up allocated memory
     delete objectiveFs;
 
     return 0;
 }
 
+/**
+ * @brief Allocates a new flowshop object depending on the selected algorithm and
+ * returns a pointer to the newly created object.
+ * 
+ * @param inputFile Input file that contains the job processing time matrix which will be passed to the flowshop object
+ * @param alg Index of the flowshop algorithm to allocate. 0 = Standard, 1 = With Blocking, 2 = With No Wait.
+ * @return Returns a pointer to the newly created flowshop object
+ */
 FlowshopBasic* Experiment::allocFlowShop(const char* inputFile, int alg)
 {
     FlowshopBasic* objectiveFs = nullptr;
@@ -155,6 +216,12 @@ FlowshopBasic* Experiment::allocFlowShop(const char* inputFile, int alg)
     return objectiveFs;
 }
 
+/**
+ * @brief Reads the experiment test parameters in from the ini param file
+ * and places them in a TestParams struct.
+ * 
+ * @return Returns the experiment test parameters in a TestParams struct
+ */
 TestParams Experiment::readTestParams()
 {
     TestParams p = { };
@@ -167,12 +234,14 @@ TestParams Experiment::readTestParams()
     p.resultsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_RESULTSFILE, "");
     p.timesFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_TIMESFILE, "");
 
+    // Check bounds for numThreads
     if (p.numThreads < 1 || p.numThreads > 16)
     {
         cout << "Warning: Number of threads invalid. Defaulting to default 1 threads." << endl;
         p.numThreads = 1;
     }
 
+    // Check bounds for algorithm selection
     if (p.algorithm < 0 || p.algorithm > 2)
     {
         cout << "Warning: Algorithm selection invalid. Defaulting to algorithm 0." << endl;
@@ -181,3 +250,7 @@ TestParams Experiment::readTestParams()
 
     return p;
 }
+
+// =========================
+// End of experiment.cpp
+// =========================

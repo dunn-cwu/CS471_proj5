@@ -1,12 +1,34 @@
+/**
+ * @file neh.cpp
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Implementation file for the NEH class.
+ * @version 0.1
+ * @date 2019-05-27
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
+
 #include "neh.h"
 
+// Type alias
 using jtList = std::list<fshop::JobTimePair>;
 using jList = std::list<int>;
 
+/**
+ * @brief Construct a new NEH object
+ * 
+ */
 fshop::NEH::NEH()
     : rd(), randEngine(rd()), randChance(0, 1)
 { }
 
+/**
+ * @brief Runs the NEH algorithm on the given flowshop objective function
+ * 
+ * @param objectiveFs Pointer to the flowshop objective function being optimized
+ * @return Returns a unique_ptr to a FlowshopSolution object that contains the best solution found.
+ */
 fsSol fshop::NEH::run(FlowshopBasic* const objectiveFs)
 {
     jtList availJobsList;
@@ -39,6 +61,12 @@ fsSol fshop::NEH::run(FlowshopBasic* const objectiveFs)
     return std::move(bestSol);
 }
 
+/**
+ * @brief Generates the initial jobs list and sorts them by processing time in descending order
+ * 
+ * @param objectiveFs Pointer to the flowshop objective function being optimized
+ * @param outList Out reference to the job list that will be filled and sorted
+ */
 void fshop::NEH::makeInitialAvailJobList(FlowshopBasic* const objectiveFs, jtList& outList)
 {
     const size_t numMachines = objectiveFs->getTotalMachines();
@@ -59,6 +87,15 @@ void fshop::NEH::makeInitialAvailJobList(FlowshopBasic* const objectiveFs, jtLis
     outList.sort([](JobTimePair& lhs, JobTimePair& rhs) { return lhs.time >= rhs.time; });
 }
 
+/**
+ * @brief Finds the best permutation of an existing job sequence and an additional inserted job.
+ * 
+ * @param objectiveFs Pointer to the flowshop objective function being optimized
+ * @param baseList Base job sequence list
+ * @param jobInsert Job that is being inserted
+ * @param outBestSeq Out reference list that will be filled with the best job sequence found
+ * @return Returns a unique_ptr to the FlowshopSolution object created from the best job sequence
+ */
 fsSol fshop::NEH::bestPermutation(FlowshopBasic* const objectiveFs, const jList& baseList, int jobInsert, jList& outBestSeq)
 {
     fsSol bestSol = nullptr;
@@ -96,3 +133,7 @@ fsSol fshop::NEH::bestPermutation(FlowshopBasic* const objectiveFs, const jList&
     delete[] seqArr;
     return std::move(bestSol);
 }
+
+// =========================
+// End of neh.cpp
+// =========================

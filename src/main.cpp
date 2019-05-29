@@ -1,3 +1,14 @@
+/**
+ * @file main.cpp
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Program entry point, runs the cs471 project 5
+ * experiment via experiment.h.
+ * @version 0.1
+ * @date 2019-05-23
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
 #include <iostream>
 #include "experiment.h"
 
@@ -15,6 +26,7 @@ int main(int argc, char** argv)
 
     try
     {
+        // Run experiment and return error code
         cs471::Experiment ex(argv[1]);
         return ex.run();
     }
@@ -26,3 +38,7 @@ int main(int argc, char** argv)
     
     return 0;
 }
+
+// =========================
+// End of main.cpp
+// =========================

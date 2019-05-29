@@ -1,3 +1,14 @@
+/**
+ * @file experiment.h
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Contains the Experiment class which runs the cs471 lab 5 experiment
+ * @version 0.1
+ * @date 2019-05-26
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
+
 #ifndef __EXPERIMENT_H
 #define __EXPERIMENT_H
 
@@ -8,6 +19,10 @@
 
 namespace cs471
 {
+    /**
+     * @brief Simple data structure that stores the 
+     * test parameters for the experiment
+     */
     struct TestParams
     {
         int minTestFile;
@@ -19,11 +34,16 @@ namespace cs471
         std::string timesFile;
     };
 
+    /**
+     * @brief The experiment class runs takes a given ini file path,
+     * opens it, parses the parameters, then runs the NEH algorithm
+     * with the given parameters.
+     */
     class Experiment
     {
     public:
         Experiment(std::string paramsFile);
-        ~Experiment();
+        ~Experiment() = default;
 
         int run();
     private:
@@ -36,3 +56,7 @@ namespace cs471
 }
 
 #endif
+
+// =========================
+// End of experiment.h
+// =========================
