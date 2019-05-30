@@ -178,6 +178,55 @@ int Experiment::runNEHThreaded(TestParams* const p, const std::string inputFile,
     resultsTable->setEntry(testIndex, 4, std::to_string(execTimeMs));
     resultsTable->setEntry(testIndex, 5, result->getJobSeqAsString());
 
+
+    // ======= GANTT STUFF =======
+    /*
+    const size_t numMachines = objectiveFs->getTotalMachines();
+    const size_t numJobs = objectiveFs->getTotalJobs();
+    
+    auto startTimeMatrix = result->getStartTimeMatrix();
+    auto departTimeMatrix = result->getDepartTimeMatrix();
+
+    mdata::DataTable<std::string> ganttTable(numJobs * numMachines, 5);
+
+    ganttTable.setColLabel(0, "Item");
+    ganttTable.setColLabel(1, "Machine");
+    ganttTable.setColLabel(2, "Job");
+    ganttTable.setColLabel(3, "Start");
+    ganttTable.setColLabel(4, "End");
+
+    size_t row = 0;
+
+    for (size_t m = 0; m < numMachines; m++)
+    {
+        for (size_t j = 0; j < numJobs; j++)
+        {
+            ganttTable.setEntry(row, 0, std::to_string(row + 1));
+            ganttTable.setEntry(row, 1, std::string("Machine ") + std::to_string(m + 1));
+            ganttTable.setEntry(row, 2, std::string("Job ") + std::to_string(j + 1));
+            ganttTable.setEntry(row, 3, std::to_string(startTimeMatrix[m][j]));
+            ganttTable.setEntry(row, 4, std::to_string(departTimeMatrix[m][j]));
+
+            row++;
+        }
+    }
+
+    std::string ganttfile = "results/gantt/";
+
+    if (p->algorithm == 0)
+        ganttfile += "fss/";
+    else if (p->algorithm == 1)
+        ganttfile += "fsb/";
+    else
+        ganttfile += "fsnw/";
+
+    ganttfile += std::to_string(testIndex);
+    ganttfile += "-gantt.csv";
+    ganttTable.exportCSV(ganttfile.c_str());
+    */
+    // ===========================
+
+
     // Dump NEH results start and departure time matrices to a csv file
     if (!p->timesFile.empty())
         result->outputTimesCsv(util::s_replace(p->timesFile, "%TEST%", std::to_string(testIndex)));
