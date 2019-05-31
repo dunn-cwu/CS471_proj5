@@ -1,5 +1,5 @@
 Course: CS471
-Assignment: Project 4
+Assignment: Project 5
 Student: Andrew Dunn
 Instructor: Dr. Donald Davendra
 
@@ -7,12 +7,10 @@ Instructor: Dr. Donald Davendra
 Project Description
 ---------------------------------
 
-This project tests 18 different dimension scalable 
-mathematical functions with a random population data
-set. The goal is to find a population that produces
-a fitness close to the optimal value using various
-search algorithms. The search algorithms used are
-particle swarm, firefly algorithm, and harmony search.
+This project tests the NEH algorithm on three different
+flow shop problems: Flows shop scheduling, flow shop with blocking,
+and flow shop with no wait. Each of the three problems is tested over
+120 different data sets, with all results recorded to various .csv files.
 
 ---------------------------------
 Project Requirements
@@ -81,12 +79,12 @@ For Ubuntu and MacOS:
 
 To run this project, a few shell scripts are provided that will
 run the release binary using different test parameter files included 
-in the [project]/source/params/ directory. To run particle swarm for
-example, open a terminal and execute the following commands:
+in the [project]/source/params/ directory. To run NEH on the flow shop
+scheduling problem for all 120 data sets, execute the following commands in a terminal.
 
 ```
 cd [Path-to-/source-dir]
-./unix-run-pso.sh
+./unix-run-fss.sh
 ```
 
 Where [Path-to-/source-dir] is the file system path to the [project]/source/ directory
@@ -95,13 +93,13 @@ Results files will be placed in the [project]/source/results directory.
 
 --------
 
-To run the firefly or harmony search algorithms, open a terminal and 
+To run the flow shop with blocking or flow shop with no wait problems, open a terminal and 
 execute the following commands:
 
 ```
 cd [Path-to-/source-dir]
-./unix-run-fa.sh
-./unix-run-hs.sh
+./unix-run-fsb.sh
+./unix-run-fsnw.sh
 ```
 Where [Path-to-/source-dir] is the file system path to the [project]/source/ directory
 within this project. You should see a message that says all tests were ran after they complete.
@@ -109,7 +107,7 @@ Results files will be placed in the [project]/source/results directory.
 
 --------
 
-To run both all three search algorithms,
+To run all three flow shop problems for all 120 data sets,
 open a terminal and execute the following command:
 
 ```
@@ -126,58 +124,55 @@ If you wish to run this project manually, within the terminal run the
 following command:
 
 ```
-./build/release/cs471-proj4.out [Input-parameter-file]
+./build/release/cs471-proj5.out [Input-parameter-file]
 ```
 
 Where [Input-parameter-file] is the path to the input parameter ini file.
-There are three already provided within the [project]/source/params/ directory 
-which will run the search algorithms with different parameters. For example:
+There several already provided within the [project]/source/params/ directory 
+which will run the NEH algorithm with different flow shop problems. For example:
 
 ```
 cd [Path-to-/source-dir]
-./build/release/cs471-proj4.out ./params/fa-1.ini
+./build/release/cs471-proj4.out ./params/fss.ini
 ```
 
 Available files:
 
 Used for debugging:
-./params/debug_params.ini
+./params/debug.ini
 
-Firefly algorithm, four parameter strategies:
-./params/fa-1.ini
-./params/fa-2.ini
-./params/fa-3.ini
-./params/fa-4.ini
+Flow shop scheduling problem, all data sets:
+./params/fss.ini
 
-Harmony search, four parameter strategies:
-./params/hs-1.ini
-./params/hs-2.ini
-./params/hs-3.ini
-./params/hs-4.ini
+Flow shop with blocking problem, all data sets:
+./params/fsb.ini
 
-Particle swarm, four parameter strategies
-./params/pso-1.ini
-./params/pso-2.ini
-./params/pso-3.ini
-./params/pso-4.ini
+Flow shop with no wait problem, all data sets:
+./params/fsnw.ini
 
 ---------------------------------
-Optional Run Command Line Argument
+Optional Run Command Line Argument - Specify Job Sequence
 ---------------------------------
 
 When running the project manually, you can specify an additional command line
-argument that allows you to select a specific data type to be used in the experiment.
-To do this, open a terminal and execute the following commands:
+argument that allows you verify the resulting start and departure time matrices
+for a given job sequence.
 
 ```
-./build/release/cs471-proj4.out [Input-parameter-file] [Datatype-id]
+./build/release/cs471-proj4.out [Input-parameter-file] "[job-sequence]"
 ```
 
-Where [Datatype-id] is an integer ranging from 0 to 2:
+Where "[job-sequence]" is a list of integers surrounded by quotation marks and
+separated by spaces. For example, open a terminal and run the following command:
 
-0 = 32-bit float
-1 = 64-bit float
-2 = 128-bit float (when supported by your system)
+```
+cd [Path-to-/source-dir]
+./build/release/cs471-proj4.out ./params/debug.ini "1 2 3 4 5"
+```
+
+This will run data set 0 (the data set used in Dr. Davendra's powerpoint slides) with the
+given job sequence of 1, 2, 3, 4, 5 and will output the resulting calculations. If you wish to 
+select a different data set or flow shop problem, please edit the debug.ini file.
 
 ---------------------------------
 Run Instructions - Windows based machines
@@ -186,80 +181,44 @@ Run Instructions - Windows based machines
 A few batch scripts are provided in the [project]\source\ directory.
 
 To run this project in Windows, simply double click the the win-run-all.bat
-file which will run both the genetic algorithm and differential evolutionary algorithms 
-tests. Results files will be placed in the [project]/source/results directory.
+file which will run both the NEH algorithm for all three flow shop problems.
+Results files will be placed in the [project]/source/results directory.
 
 ---------------------------------
 Input parameter file format
 ---------------------------------
 
 The input parameter file is a configuration file in the *.ini format.
-It contains two different main sections, 'test' and 'function_range'.
-
-The 'test' section contains various settings to control how the
-experiment is ran and which files are produced. The 'function_range'
-section lets you specify the random number generator bounds for each 
-function's data population.
+It contains one section, 'test'. The 'test' section contains various 
+settings to control how the experiment is ran and which files are produced.
 
 --
 
 Within the 'test' section:
 
-The 'population' entry sets the number of rows in the population vector matix.
+The 'minTestFile' entry sets the starting number of the input data sets to be computed.
+All input data sets must be in a text file inside the ./source/[inputFilesDir]/directory
+and have a file name with the following patern: [NUM].txt.
 
-The 'dimensions' entry sets the number of dimensions for each of the
-population vectors.
+The 'maxTestFile' entry sets the last number of the input data sets to be computed.
+All files within minTestFile and maxTestFile will be opened and solved with the NEH algorithm.
+All input data sets must be in a text file inside the ./source/[inputFilesDir]/directory
+and have a file name with the following patern: [NUM].txt.
 
-The 'iterations' entry sets the number of test iterations for the selected
-search algorithm.
-
-The 'num_threads' entry sets the number of worker threads you want to use
+The 'numThreads' entry sets the number of worker threads you want to use
 to run the experiment. Note that you want to set this value to be equal or
 close to the number of CPU's/CPU cores available in your system.
 
-The 'algorithm' entry allows you to select which search algorithm to run.
-0 = Particle swarm, 1 = Firefly algorithm, and 2 = Harmony search.
+The 'algorithm' entry allows you to select which flowshop problem to use.
+0 = Flow shop scheduling, 1 = Flow shop with blocking, and 2 = flow shop with no wait.
 
-The 'results_file' entry is the file path (without spaces) to the file you 
-wish to export the best fitness results to.
+The 'inputFilesDir' entry is the directory path (without spaces) containing all input data
+set files.
 
-The 'worst_fit_file' entry is the file path (without spaces) to the file you 
-wish to export the worst fitness results to.
+The 'resultsFile' entry is the file path (without spaces) where you wish to output the results
+.csc file to.
 
-The 'exec_times_file' entry is the file path (without spaces) to the file you
-wish to export the search algorithm execution times to.
-
-The 'func_calls_file' entry is the file path (without spaces) to the file you
-wish to export objective function call counts to.
-
---
-
-The 'particle_swarm' section lets you specify parameters specific to the particle swarm algorithm:
-
-The 'c1' entry specifies c1 random chance for particle swarm (0-1.0)
-
-The 'c2' entry specifies c2 random chance for particle swarm (0-1.0)
-
-The 'k' entry specifies the velocity dampening factor for particle swarm
-
---
-
-The 'firefly' section lets you specify parameters specific to the firefly algorithm:
-
-The 'alpha' entry specifies the alpha parameter for the firefly algorithm
-
-The 'betamin' entry specifies the betamin parameter for the firefly algorithm
-
-The 'gamma' entry specifies the gamma parameter for the firefly algorithm
-
---
-
-The 'harmony_search' section lets you specify parameters specific to the harmony search algorithm:
-
-The 'hmcr' entry specifies the Harmony Memory Considering Rate parameter for the harmony search algorithm
-
-The 'par' entry specifies the Pitch Adjusting Rate parameter for the harmony search algorithm
-
-The 'bw' entry specifies the Bandwidth parameter for the harmony search algorithm
+The 'timesFile' entry is the file path prefix (without spaces) where you wish to output all start time
+and departure time matrices for the resulting job sequence to.
 
 ---------------------------------
